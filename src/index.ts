@@ -1,4 +1,4 @@
-import express from 'express';
+import express, {Express} from 'express';
 import {
     initializeTransactionalContext,
     patchTypeORMRepositoryWithBaseRepository
@@ -10,22 +10,26 @@ import 'reflect-metadata';
 import {Constants} from "./constants/constants";
 import {Routes} from "./routes/routes";
 import {MasterRecordLoader} from "./loaders/master-record.loader";
+import {createClient, RedisClientType} from "redis";
+import http from "http";
+import {HttpStatusCode} from "./domain/enums/http-status-code";
 
 
 const Application = async () => {
     const app = express();
-    let server;
+    let server: http.Server | Express;
     app.use(express.json());
     const port = 4000;
 
     initializeTransactionalContext();
     if (!isTestEnvironment()) patchTypeORMRepositoryWithBaseRepository();
     await initializeDataBaseConnection().catch();
+    await initializeRedisClient().catch();
     await loadMasterRecords();
     Routes.register(app);
 
     app.use((e: any, req: any, res: any, next: any) => {
-        res.status(500, 'An error occurred');
+        res.status(HttpStatusCode.INTERNAL_SERVER, 'An error occurred');
     });
 
     server = app;
@@ -35,9 +39,8 @@ const Application = async () => {
         });
     }
     return server;
-
-
 }
+
 Application();
 
 function isTestEnvironment(): boolean {
@@ -63,6 +66,14 @@ async function initializeDataBaseConnection() {
 
 async function loadMasterRecords() {
     await new MasterRecordLoader().load();
+}
+
+async function initializeRedisClient() {
+    const redisClient = createClient({url: 'redis://localhost:6379'});
+    redisClient.on('error', (err) => console.log('Redis Client Error', err));
+    await redisClient.connect().catch();
+    Container.set<RedisClientType<any, any, any>>(Constants.REDIS_CONNECTION, redisClient);
+
 }
 
 

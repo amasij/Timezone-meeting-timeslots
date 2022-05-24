@@ -4,14 +4,17 @@ import {DateTime} from "luxon";
 import {AppRepository} from "../repositories/app.repository";
 import {ScheduleDto} from "../domain/dto/schedule.dto";
 import {Holiday} from "../models/entity/Holiday";
+import {RedisClient} from "../integrations/redis-client";
 
 @ValidatorConstraint({name: 'isHoliday', async: true})
 export class IsHolidayValidator implements ValidatorConstraintInterface {
     private appRepository!: AppRepository;
+    private redisClient!: RedisClient;
     private holidayDescription!: string;
 
     constructor() {
         this.appRepository = Container.get(AppRepository);
+        this.redisClient = Container.get(RedisClient);
     }
 
     async validate(identifier: string, args: ValidationArguments) {
@@ -21,6 +24,13 @@ export class IsHolidayValidator implements ValidatorConstraintInterface {
         const month: number = dateTime.month;
         try {
 
+            const redisKey = this.formatRedisKey(dto.CC, dayOfMonth, month);
+            const holidayDescription = await this.isHolidayCached(redisKey);
+            if (holidayDescription) {
+                this.holidayDescription = holidayDescription;
+                return false;
+            }
+
             const queryString: string = `SELECT *
                                          FROM holiday
                                          WHERE day_of_month = $1 AND month = $2
@@ -29,12 +39,25 @@ export class IsHolidayValidator implements ValidatorConstraintInterface {
 
             if (res && res.length) {
                 this.holidayDescription = (res as any)[0]['description'];
+                await this.cacheHoliday(redisKey, this.holidayDescription);
                 return false;
             }
         } catch (e) {
 
         }
         return true;
+    }
+
+    private formatRedisKey(countryCode: string, dayOfMonth: number, month: number): string {
+        return `${countryCode}:${dayOfMonth}:${month}`;
+    }
+
+    private async isHolidayCached(redisKey: string): Promise<string | null> {
+        return await this.redisClient.get(redisKey);
+    }
+
+    private async cacheHoliday(redisKey: string, holidayDescription: string) {
+        await this.redisClient.set(redisKey, holidayDescription);
     }
 
 
