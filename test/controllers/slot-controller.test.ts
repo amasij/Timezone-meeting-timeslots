@@ -3,8 +3,10 @@ import request from 'supertest';
 import {Express} from "express";
 import http from "http";
 import {Application} from "../../src";
+import {HttpStatusCode} from "../../src/domain/enums/http-status-code";
 
 let server: http.Server | Express;
+
 beforeAll(async () => {
     process.env.NODE_ENV = 'test';
     server = await Application();
@@ -31,7 +33,7 @@ describe('GET available slots', () => {
                 ]
             })
             .expect('Content-Type', 'application/json; charset=utf-8')
-            .expect(200)
+            .expect(HttpStatusCode.OK)
             .end((err, res) => {
                 if (err) return done(err)
                 expect(res.body).toBeInstanceOf(Array);
@@ -62,7 +64,7 @@ describe('GET available slots', () => {
                 ]
             })
             .expect('Content-Type', 'application/json; charset=utf-8')
-            .expect(200)
+            .expect(HttpStatusCode.OK)
             .end((err, res) => {
                 if (err) return done(err)
                 expect(res.body).toEqual('There are no available meeting slots');
@@ -89,7 +91,7 @@ describe('GET available slots', () => {
                 ]
             })
             .expect('Content-Type', 'application/json; charset=utf-8')
-            .expect(400)
+            .expect(HttpStatusCode.BAD_REQUEST)
             .end((err, res) => {
                 if (err) return done(err)
                 expect(res.body).toBeInstanceOf(Array);
@@ -118,7 +120,7 @@ describe('GET available slots', () => {
                 ]
             })
             .expect('Content-Type', 'application/json; charset=utf-8')
-            .expect(400)
+            .expect(HttpStatusCode.BAD_REQUEST)
             .end((err, res) => {
                 if (err) return done(err)
                 expect(res.body).toBeInstanceOf(Array);
@@ -151,7 +153,7 @@ describe('GET available slots', () => {
                 ]
             })
             .expect('Content-Type', 'application/json; charset=utf-8')
-            .expect(400)
+            .expect(HttpStatusCode.BAD_REQUEST)
             .end((err, res) => {
                 if (err) return done(err)
                 expect(res.body).toBeInstanceOf(Array);
