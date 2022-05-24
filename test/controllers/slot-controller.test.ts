@@ -6,6 +6,7 @@ import {Application} from "../../src";
 import {HttpStatusCode} from "../../src/domain/enums/http-status-code";
 
 let server: http.Server | Express;
+const url:string = '/api/v1/get-slots';
 
 beforeAll(async () => {
     process.env.NODE_ENV = 'test';
@@ -17,7 +18,7 @@ describe('GET available slots', () => {
 
     it('should return available slots ', done => {
         request(server)
-            .post(`/register`)
+            .post(url)
             .send({
                 schedules: [
                     {
@@ -48,7 +49,7 @@ describe('GET available slots', () => {
 
     it('should return no available slots ', done => {
         request(server)
-            .post(`/register`)
+            .post(url)
             .send({
                 schedules: [
                     {
@@ -75,7 +76,7 @@ describe('GET available slots', () => {
     it('should notify that date is a weekend ', done => {
         const weekend: string = '2022-05-29'; //SUNDAY
         request(server)
-            .post(`/register`)
+            .post(url)
             .send({
                 schedules: [
                     {
@@ -104,7 +105,7 @@ describe('GET available slots', () => {
     it('should catch invalid  RFC 3339 format  ', done => {
         const invalidFormat: string = '2022-12-001T107:00:00.0+01:00';
         request(server)
-            .post(`/register`)
+            .post(url)
             .send({
                 schedules: [
                     {
@@ -137,7 +138,7 @@ describe('GET available slots', () => {
     it('should notify that it is a holiday ', done => {
         const nigeriaIndependence: string = '2022-10-01'; //this date happens to be a SATURDAY also
         request(server)
-            .post(`/register`)
+            .post(url)
             .send({
                 schedules: [
                     {
@@ -164,6 +165,23 @@ describe('GET available slots', () => {
                 expect((res.body as Array<any>)[1]).toMatchObject({
                     isWeekend: `${nigeriaIndependence}T09:00:00.0+01:00 is a weekend`
                 });
+                done();
+            });
+    });
+
+    it('should not allow submissions of empty schedules', done => {
+        request(server)
+            .post(url)
+            .send({
+                schedules: []
+            })
+            .expect('Content-Type', 'application/json; charset=utf-8')
+            .expect(HttpStatusCode.BAD_REQUEST)
+            .end((err, res) => {
+                if (err) return done(err)
+                expect(res.body).toBeInstanceOf(Array);
+                expect((res.body as []).length).toBe(1);
+                expect((res.body as Array<any>)[0]).toEqual('Schedules must not be empty');
                 done();
             });
     });
