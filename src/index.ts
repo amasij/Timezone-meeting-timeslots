@@ -9,6 +9,7 @@ import {Container} from "typedi";
 import 'reflect-metadata';
 import {Constants} from "./constants/constants";
 import {Routes} from "./routes/routes";
+import {MasterRecordLoader} from "./loaders/master-record.loader";
 
 
 const Application = async () => {
@@ -20,6 +21,7 @@ const Application = async () => {
     initializeTransactionalContext();
     if (!isTestEnvironment()) patchTypeORMRepositoryWithBaseRepository();
     await initializeDataBaseConnection().catch();
+    await loadMasterRecords();
     Routes.register(app);
 
     app.use((e: any, req: any, res: any, next: any) => {
@@ -58,6 +60,11 @@ async function initializeDataBaseConnection() {
 
     Container.set<DataSource>(Constants.DB_CONNECTION, connection);
 }
+
+async function loadMasterRecords() {
+    await new MasterRecordLoader().load();
+}
+
 
 export {Application};
 
