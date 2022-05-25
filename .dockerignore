@@ -1,0 +1,12 @@
+logs
+*.log
+
+pids
+*.pid
+*.seed
+
+build/Release
+
+node_modules
+
+test/*.test.ts

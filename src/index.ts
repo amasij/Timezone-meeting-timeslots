@@ -51,17 +51,16 @@ function isTestEnvironment(): boolean {
 async function initializeDataBaseConnection() {
     const connection: DataSource = await createConnection({
         type: 'postgres',
-        host: 'localhost',
+        host: process.env.DB_HOST,
         port: 5432,
-        username: 'admin',
-        password: 'admin',
-        database: 'lumitest',
+        username: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_DATABASE,
         entities: [
             __dirname + "/models/entity/*.ts"
         ],
         synchronize: true,
     } as PostgresConnectionOptions).catch();
-
     Container.set<DataSource>(Constants.DB_CONNECTION, connection); //register singleton instance with DI client
 }
 
@@ -72,7 +71,7 @@ async function loadMasterRecords() {
 
 //Attempt connection with redis server and then register client instance to DI client
 async function initializeRedisClient() {
-    const redisClient = createClient({url: 'redis://localhost:6379'});
+    const redisClient = createClient({url: 'redis://redis-server:6379'});
     redisClient.on('error', (err) => console.log('Redis Client Error', err));
     await redisClient.connect().catch();
     Container.set<RedisClientType<any, any, any>>(Constants.REDIS_CONNECTION, redisClient);

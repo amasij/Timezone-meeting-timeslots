@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    container_name: backend
+    image: backend:1.0.0
+    build:
+      context: .
+    ports:
+      - '4000:4000'
+    environment:
+      - DB_USER=admin
+      - DB_PASSWORD=admin
+      - DB_DATABASE=lumiqualis
+      - DB_HOST=db
+    depends_on:
+      - db
+      - redis-server
+
+  redis-server:
+    image: 'redis:6.2-alpine'
+    ports:
+      - '6379:6379'
+
+  db:
+    container_name: db
+    image: 'postgres:12'
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=lumiqualis
+    volumes:
+      - pgdata1:/var/lib/postgresql/data
+
+volumes:
+  pgdata1: {}
