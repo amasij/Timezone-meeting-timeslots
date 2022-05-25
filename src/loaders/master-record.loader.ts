@@ -5,21 +5,29 @@ import {Holiday} from "../models/entity/Holiday";
 
 const holidayJSON = require('../resources/holiday.json');
 
+/*
+* Loads resources from external sources (e.g JSON file)  into the database
+* */
+
 @Service()
 export class MasterRecordLoader {
-    private appRepository: AppRepository = Container.get(AppRepository);
+    private appRepository: AppRepository = Container.get(AppRepository); //inject database wrapper class
 
     constructor() {
         return this;
     }
 
     public async load() {
+        // Checks if the table already has data (i.e number of rows = 0 )
+        //If there are items in the table the loading process is skipped
+        // This prevents the records from being loaded on every startup
         if (await this.appRepository.getRepository(Holiday).count() == 0) {
             await this.loadHolidays();
         }
     }
 
-    @Transactional()
+    //Load all holidays from the json file into the Holiday table in the database
+    @Transactional() // enables automatic commits and roll-back
     private async loadHolidays() {
         const holidays: Holiday[] = [];
         const holidayList = holidayJSON as IHoliday[];
@@ -36,7 +44,7 @@ export class MasterRecordLoader {
                 holidays.push(holiday);
             });
         }
-        await this.appRepository.getRepository(Holiday).save(holidays);
+        await this.appRepository.getRepository(Holiday).save(holidays); //save all the holidays in the db and commit
         console.log('<=================== Holidays Loaded ===================>')
     }
 }

@@ -4,5 +4,4 @@ export enum HttpStatusCode {
     NOT_FOUND = 404,
     UNAUTHORIZED = 401,
     INTERNAL_SERVER = 500
-
 }

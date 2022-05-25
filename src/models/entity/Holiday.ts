@@ -1,5 +1,8 @@
 import {Column, Entity, PrimaryGeneratedColumn} from "typeorm";
 
+/*
+* Entity class for the Holiday table in the database
+* */
 @Entity()
 export class Holiday{
     @PrimaryGeneratedColumn()
