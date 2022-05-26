@@ -13,7 +13,6 @@ import {RedisClient} from "../integrations/redis-client";
 export class IsHolidayValidator implements ValidatorConstraintInterface {
     private appRepository!: AppRepository;
     private redisClient!: RedisClient;
-    private holidayDescription!: string;
 
     constructor() {
         this.appRepository = Container.get(AppRepository); // Inject database wrapper
@@ -33,7 +32,7 @@ export class IsHolidayValidator implements ValidatorConstraintInterface {
             const redisKey = this.formatRedisKey(dto.CC, dayOfMonth, month);
             const holidayDescription = await this.isHolidayCached(redisKey);
             if (holidayDescription) {
-                this.holidayDescription = holidayDescription;
+                (args.constraints[0] as Map<string,string>).set(dto.CC,holidayDescription);
                 return false;
             }
 
@@ -47,8 +46,9 @@ export class IsHolidayValidator implements ValidatorConstraintInterface {
             if (res && res.length) {
                 //This means that the given date is a holiday
                 //so cache the result in redis and return
-                this.holidayDescription = (res as any)[0]['description'];
-                await this.cacheHoliday(redisKey, this.holidayDescription);
+                const holidayDescription = (res as any)[0]['description'];
+                await this.cacheHoliday(redisKey, holidayDescription);
+                (args.constraints[0] as Map<string,string>).set(dto.CC,holidayDescription);
                 return false;
             }
         } catch (e) {
@@ -76,6 +76,6 @@ export class IsHolidayValidator implements ValidatorConstraintInterface {
 //Error message displayed when a violation is made
     defaultMessage(args: ValidationArguments) {
         const dto: ScheduleDto = args.object as ScheduleDto;
-        return `${dto.from} is a holiday (${this.holidayDescription ?? ''}) in ${dto.CC}`;
+        return `${dto.from} is a holiday (${(args.constraints[0] as Map<string,string>).get(dto.CC) ?? ''}) in ${dto.CC}`;
     }
 }

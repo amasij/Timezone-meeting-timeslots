@@ -37,8 +37,8 @@ export class MasterRecordLoader {
                 const monthOffset = 1;
                 let holiday: Holiday = new Holiday();
                 const holidayDate = new Date(item.date);
-                holiday.month = holidayDate.getMonth();
-                holiday.dayOfMonth = holidayDate.getDate() + monthOffset;
+                holiday.month = holidayDate.getMonth() + monthOffset;
+                holiday.dayOfMonth = holidayDate.getDate();
                 holiday.description = item.description;
                 holiday.countryCode = countryCode;
                 holidays.push(holiday);

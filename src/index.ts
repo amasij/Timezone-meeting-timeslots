@@ -3,6 +3,7 @@ import {
     initializeTransactionalContext,
     patchTypeORMRepositoryWithBaseRepository
 } from "typeorm-transactional-cls-hooked";
+import dotenv from 'dotenv';
 import {createConnection, DataSource} from "typeorm";
 import {PostgresConnectionOptions} from "typeorm/driver/postgres/PostgresConnectionOptions";
 import {Container} from "typedi";
@@ -15,13 +16,14 @@ import {HttpStatusCode} from "./domain/enums/http-status-code";
 
 
 const Application = async () => {
+    dotenv.config(); //load all environment variables
     const app = express();
     app.use(express.json());
     const port = 4000;
 
     initializeTransactionalContext(); // To enable use of @Transactional() on a method when carrying out a db transaction
     if (!isTestEnvironment()) patchTypeORMRepositoryWithBaseRepository();
-    await initializeDataBaseConnection().catch(); // obtain a database connection
+    await initializeDataBaseConnection().catch(console.log); // obtain a database connection
     await initializeRedisClient().catch(); // obtain a redis server connection
     await loadMasterRecords(); // load master records from external resources to the database
     Routes.register(app); // Register application routes
@@ -43,9 +45,6 @@ const Application = async () => {
 
 Application(); //LAUNCH APPLICATION
 
-function isTestEnvironment(): boolean {
-    return process.env.NODE_ENV === 'test';
-}
 
 //Acquire a database connection and register it with the DI client
 async function initializeDataBaseConnection() {
@@ -61,6 +60,7 @@ async function initializeDataBaseConnection() {
         ],
         synchronize: true,
     } as PostgresConnectionOptions).catch();
+    
     Container.set<DataSource>(Constants.DB_CONNECTION, connection); //register singleton instance with DI client
 }
 
@@ -71,11 +71,23 @@ async function loadMasterRecords() {
 
 //Attempt connection with redis server and then register client instance to DI client
 async function initializeRedisClient() {
-    const redisClient = createClient({url: 'redis://redis-server:6379'});
+    const host = isLocalEnvironment() ? 'localhost':'redis-server';
+    const redisClient = createClient({url: `redis://${host}:6379`});
     redisClient.on('error', (err) => console.log('Redis Client Error', err));
     await redisClient.connect().catch();
     Container.set<RedisClientType<any, any, any>>(Constants.REDIS_CONNECTION, redisClient);
 
+}
+
+function isTestEnvironment(): boolean {
+    return process.env.NODE_ENV === 'test';
+}
+
+function isLocalEnvironment():boolean{
+    if (process.argv.length < 3){
+        return false;
+    }
+    return process.argv[2] == 'local'
 }
 
 

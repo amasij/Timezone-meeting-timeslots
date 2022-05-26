@@ -12,7 +12,7 @@ const RFC339Format = RegExp(/^([0-9]+)-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])[
 export class ScheduleDto {
     @IsDefined({message: 'Country code ("CC") must be present'})
     @Expose()
-    @Validate(IsHolidayValidator,[]) // checks if this object falls on a holiday
+    @Validate(IsHolidayValidator,[new Map<string,string>()]) // checks if this object falls on a holiday
     CC!: string;
 
     @IsDefined({message: '"from" must be present'})
