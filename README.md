@@ -1,4 +1,3 @@
-# Lumiqualis Assessment (Simon Joseph)
 
 The project takes a list of schedules from different (possibly from different timezones aswell) and returns a list of available meeting slots in UTC format
 
